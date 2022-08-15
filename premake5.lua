@@ -1,6 +1,5 @@
 workspace "Engine"
 	architecture "x86_64"
-	startproject "Application"
 
 	configurations
     {
@@ -84,4 +83,5 @@ project "Engine"
 		symbols "On"
 
 	filter { "configurations:Release" }
+		defines { "NDEBUG" }
 		optimize "On"
