@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include "Render/VertexArray.h"
+#include "Render/Shader.h"
 
 int main()
 {
@@ -53,99 +54,7 @@ int main()
         1, 2, 3    // second triangle
     };
 
-    const char* vertexShaderSource = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-
-void main()
-{
-    gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-}
-)";
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
-    glCompileShader(vertexShader);
-    // Check vertex shader compile error
-    {
-    GLint isCompiled = 0;
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &isCompiled);
-    if (isCompiled == GL_FALSE)
-    {
-        GLint maxLength = 0;
-        glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &maxLength);
-
-        std::vector<GLchar> infoLog(maxLength);
-        glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
-
-        glDeleteShader(vertexShader);
-
-        LOG_ERROR("{0}", infoLog.data());
-        ASSERT(false, "Shader compilation failure!");
-    }
-    }
-
-    const char* fragmentShaderSource = R"(
-#version 330 core
-out vec4 FragColor;
-uniform vec4 color;
-void main()
-{
-    FragColor = color;
-} 
-)";
-
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
-    glCompileShader(fragmentShader);
-    // Check vertex shader compile error
-    {
-    GLint isCompiled = 0;
-    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &isCompiled);
-    if (isCompiled == GL_FALSE)
-    {
-        GLint maxLength = 0;
-        glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &maxLength);
-
-        std::vector<GLchar> infoLog(maxLength);
-        glGetShaderInfoLog(fragmentShader, maxLength, &maxLength, &infoLog[0]);
-        
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        LOG_ERROR("{0}", infoLog.data());
-        ASSERT(false, "Shader compilation failure!");
-    }
-    }
-
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-    // Check shader link
-    {
-    GLint isLinked = 0;
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &isLinked);
-    if (isLinked == GL_FALSE)
-    {
-        GLint maxLength = 0;
-        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &maxLength);
-
-        std::vector<GLchar> infoLog(maxLength);
-        glGetProgramInfoLog(shaderProgram, maxLength, &maxLength, &infoLog[0]);
-
-        glDeleteProgram(shaderProgram);
-        glDeleteShader(vertexShader);
-        glDeleteShader(fragmentShader);
-
-        LOG_ERROR("{0}", infoLog.data());
-        ASSERT(false, "Shader link failure!");
-    }
-    }
-
-    glDetachShader(shaderProgram, vertexShader);
-    glDetachShader(shaderProgram, fragmentShader);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    Shader shader("assets/shaders/vertex.vert", "assets/shaders/fragment.frag");
 
     VertexArray VAO(std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0])),
                     std::make_shared<VertexBuffer>(vertices, sizeof(vertices)),
@@ -161,10 +70,9 @@ void main()
 
         float timeValue = glfwGetTime();
         float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        int vertexColorLocation = glGetUniformLocation(shaderProgram, "color");
-        glUseProgram(shaderProgram);
-        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
+        
+        shader.Bind();
+        shader.SetFloat4("color", { 0.0f, greenValue, 0.0f, 1.0f });
         VAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
