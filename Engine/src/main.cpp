@@ -2,7 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
-#include "Render/Buffer.h"
+#include "Render/VertexArray.h"
 
 int main()
 {
@@ -147,17 +147,9 @@ void main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
-    VertexBuffer VBO(vertices, sizeof(vertices));
-    IndexBuffer EBO(indices, sizeof(indices) / sizeof(indices[0]));
-
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    VBO.Bind();
-    EBO.Bind();
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
+    VertexArray VAO(std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0])),
+                    std::make_shared<VertexBuffer>(vertices, sizeof(vertices)),
+                    { {DataType::Float, 3, "aPos"} });
     /////////////////////////////////////
     while (!glfwWindowShouldClose(window))
     {
@@ -173,7 +165,7 @@ void main()
         glUseProgram(shaderProgram);
         glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 
-        glBindVertexArray(VAO);
+        VAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);

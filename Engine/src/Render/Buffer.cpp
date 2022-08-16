@@ -13,12 +13,25 @@ VertexBuffer::~VertexBuffer()
     glDeleteBuffers(1, &m_ID);
 }
 
-void VertexBuffer::Bind()
+VertexBuffer& VertexBuffer::operator=(VertexBuffer&& vertexBuffer) noexcept
+{
+    m_ID = vertexBuffer.m_ID;
+    vertexBuffer.m_ID = 0;
+    return *this;
+}
+
+VertexBuffer::VertexBuffer(VertexBuffer&& vertexBuffer) noexcept
+    : m_ID(vertexBuffer.m_ID)
+{
+    vertexBuffer.m_ID = 0;
+}
+
+void VertexBuffer::Bind() const
 {
     glBindBuffer(GL_ARRAY_BUFFER, m_ID);
 }
 
-void VertexBuffer::Unbind()
+void VertexBuffer::Unbind() const
 {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -35,12 +48,24 @@ IndexBuffer::~IndexBuffer()
     glDeleteBuffers(1, &m_ID);
 }
 
-void IndexBuffer::Bind()
+IndexBuffer::IndexBuffer(IndexBuffer&& indexBuffer) noexcept
+    : m_ID(indexBuffer.m_ID)
+{
+    indexBuffer.m_ID = 0;
+}
+IndexBuffer& IndexBuffer::operator=(IndexBuffer&& indexBuffer) noexcept
+{
+    m_ID = indexBuffer.m_ID;
+    indexBuffer.m_ID = 0;
+    return *this;
+}
+
+void IndexBuffer::Bind() const
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ID);
 }
 
-void IndexBuffer::Unbind()
+void IndexBuffer::Unbind() const
 {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
