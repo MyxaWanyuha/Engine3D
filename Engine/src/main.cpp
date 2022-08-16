@@ -2,9 +2,11 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <imgui.h>
 #include "Render/VertexArray.h"
 #include "Render/Shader.h"
 #include "Render/Texture.h"
+#include "ImGui/ImGuiOpenGL.h"
 
 int main()
 {
@@ -24,6 +26,8 @@ int main()
 
     auto glad = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     ASSERT(glad, "Failed to initialize GLAD");
+
+    EditorUI::Init(window);
 
     glViewport(0, 0, 800, 600);
 
@@ -66,9 +70,16 @@ int main()
     /////////////////////////////////////
     while (!glfwWindowShouldClose(window))
     {
+        EditorUI::Begin();
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        ImGui::ShowDemoWindow();
+
         glm::vec4 color{ 0.2f, 0.3f, 0.8f, 1.0f };
+        ImGui::Begin("Settings");
+        ImGui::InputFloat4("Color", &color.x);
+        ImGui::End();
+
         glClearColor(color.x, color.y, color.z, color.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -84,10 +95,12 @@ int main()
         VAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        EditorUI::End();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
+    EditorUI::Destroy();
     glfwTerminate();
     return 0;
 }
