@@ -66,6 +66,7 @@ class VertexArray
 {
 public:
     VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
+    VertexArray(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
     ~VertexArray();
 
     void Bind() const;

@@ -4,12 +4,13 @@
 #include <glm/glm.hpp>
 #include "Render/VertexArray.h"
 #include "Render/Shader.h"
+#include "Render/Texture.h"
 
 int main()
 {
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef __APPLE__
@@ -43,10 +44,10 @@ int main()
 
     /// Rendering ///////////////////////
     float vertices[] = {
-         0.5f,  0.5f, 0.0f,  // top right
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
+         0.5f,  0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,     1.0f, 1.0f,// top right
+         0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 0.0f,// bottom right
+        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f, 1.0f,     0.0f, 0.0f,// bottom left
+        -0.5f,  0.5f, 0.0f,     0.8f, 0.3f, 0.2f, 1.0f,     0.0f, 1.0f,// top left 
     };
 
     unsigned int indices[] = {  // note that we start from 0!
@@ -58,7 +59,10 @@ int main()
 
     VertexArray VAO(std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0])),
                     std::make_shared<VertexBuffer>(vertices, sizeof(vertices)),
-                    { {DataType::Float, 3, "aPos"} });
+                    { {DataType::Float, 3, "a_Pos"}, {DataType::Float, 4, "a_Color"}, {DataType::Float, 2, "a_TexCoord"}, });
+
+    Texture texture1("assets/textures/container.jpg");
+    Texture texture2("assets/textures/awesomeface.png");
     /////////////////////////////////////
     while (!glfwWindowShouldClose(window))
     {
@@ -72,7 +76,11 @@ int main()
         float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
         
         shader.Bind();
-        shader.SetFloat4("color", { 0.0f, greenValue, 0.0f, 1.0f });
+        //shader.SetFloat4("color", { 0.0f, greenValue, 0.0f, 1.0f });
+        shader.SetInt("u_Tex0", 0);
+        shader.SetInt("u_Tex1", 1);
+        texture1.Bind(0);
+        texture2.Bind(1);
         VAO.Bind();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
