@@ -18,6 +18,14 @@ public:
 
     // FOV in degrees
     void SetProjection(float fieldOfView, float aspectRatio);
+    
+    float GetAspectRatio() const { return m_AspectRatio; }
+    void SetAspectRatio(float aspectRatio);
+
+    // FOV in degrees
+    float GetFieldOfView() const { return m_FieldOfView; }
+    // FOV in degrees
+    void SetFieldOfView(float fieldOfView);
 
     const glm::mat4& GetProjectionMatrix() const { return m_ProjectionMatrix; }
     const glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
@@ -29,6 +37,7 @@ public:
 private:
     void RecalculateViewProjectionMatrix();
     void RecalculateViewMatrix();
+    void RecalculateProjectionMatrix();
     void RecalculateCameraVectors();
     void RecalculateAll();
 private:
@@ -43,6 +52,9 @@ private:
     glm::vec3 m_Front;
     glm::vec3 m_Up;
     glm::vec3 m_Right;
+
+    float m_FieldOfView;
+    float m_AspectRatio;
 
     static constexpr glm::vec3 c_WorldUp = glm::vec3(0.0f, 1.0f, 0.0f);
     static constexpr float c_Near = 0.1f;

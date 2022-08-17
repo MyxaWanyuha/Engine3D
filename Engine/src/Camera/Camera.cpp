@@ -7,7 +7,9 @@ EditorCamera::EditorCamera(float fieldOfView, float aspectRatio, const glm::vec3
       m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix),
       m_Position(position),
       m_Yaw(-90.0f),
-      m_Pitch(0.0f)
+      m_Pitch(0.0f),
+      m_FieldOfView(fieldOfView),
+      m_AspectRatio(aspectRatio)
 {
     RecalculateAll();
 }
@@ -32,9 +34,21 @@ void EditorCamera::SetRotationYaw(float yaw)
 
 void EditorCamera::SetProjection(float fieldOfView, float aspectRatio)
 {
-    m_ProjectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, c_Near, c_Far);
-    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
-    RecalculateViewProjectionMatrix();
+    m_FieldOfView = fieldOfView;
+    m_AspectRatio = aspectRatio;
+    RecalculateProjectionMatrix();
+}
+
+void EditorCamera::SetAspectRatio(float aspectRatio)
+{
+    m_AspectRatio = aspectRatio;
+    RecalculateProjectionMatrix();
+}
+
+void EditorCamera::SetFieldOfView(float fieldOfView)
+{
+    m_FieldOfView = fieldOfView;
+    RecalculateProjectionMatrix();
 }
 
 void EditorCamera::RecalculateViewProjectionMatrix()
@@ -45,6 +59,13 @@ void EditorCamera::RecalculateViewProjectionMatrix()
 void EditorCamera::RecalculateViewMatrix()
 {
     m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Front, m_Up);
+    RecalculateViewProjectionMatrix();
+}
+
+void EditorCamera::RecalculateProjectionMatrix()
+{
+    m_ProjectionMatrix = glm::perspective(glm::radians(m_FieldOfView), m_AspectRatio, c_Near, c_Far);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
     RecalculateViewProjectionMatrix();
 }
 

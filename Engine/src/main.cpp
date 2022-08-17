@@ -14,13 +14,14 @@
 #include "ImGui/ImGuiOpenGL.h"
 #include "Camera/Camera.h"
 #include "Camera/CameraController.h"
+#include "Core/Event.h"
 
-const int c_Width = 800;
-const int c_Height = 600;
+const int c_Width = 1280;
+const int c_Height = 720;
 
 struct WindowData
 {
-    std::function<void()> CallbackFn;
+    std::function<void(Event&)> CallbackFn;
 };
 
 int main()
@@ -49,23 +50,94 @@ int main()
 
     CameraController cameraController(EditorCamera(45.0f, (float)c_Width / c_Height));
     WindowData windowData;
-    windowData.CallbackFn = [&]()
+    windowData.CallbackFn = [&](Event& e)
     {
+        EventDispatcher dispatcher(e);
+        dispatcher.Dispatch<EventWindowResize>([&](EventWindowResize& e)
+        {
+            LOG_INFO("W {0}, H {1}", e.Width, e.Height);
+            glViewport(0, 0, e.Width, e.Height);
+            cameraController.GetCamera().SetAspectRatio(e.Width / e.Height);
+            return false;
+        });
     };
 
     glfwSetWindowUserPointer(window, &windowData);
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height)
     {
-        glViewport(0, 0, width, height);
+        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+        EventWindowResize e(width, height);
+        data.CallbackFn(e);
     });
+
+    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int keycode)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            EventKeyTyped e(keycode);
+            data.CallbackFn(e);
+        });
+
+    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+            switch (action)
+            {
+            case GLFW_PRESS:
+            {
+                EventMouseButtonPressed e(button);
+                data.CallbackFn(e);
+                break;
+            }
+            case GLFW_RELEASE:
+            {
+                EventMouseButtonReleased e(button);
+                data.CallbackFn(e);
+                break;
+            }
+            }
+        });
+
+    glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            EventMouseScrolled e(xOffset, yOffset);
+            data.CallbackFn(e);
+        });
+
+    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xPos, double yPos)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            EventMouseMoved e(xPos, yPos);
+            data.CallbackFn(e);
+        });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
-        if(key == GLFW_KEY_ESCAPE)
+        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+        switch (action)
         {
-            glfwSetWindowShouldClose(window, true);
+        case GLFW_PRESS:
+        {
+            EventKeyPressed e(key, 0);
+            data.CallbackFn(e);
+            break;
         }
+        case GLFW_RELEASE:
+        {
+            EventKeyReleased e(key);
+            data.CallbackFn(e);
+            break;
+        }
+        case GLFW_REPEAT:
+        {
+            EventKeyPressed e(key, 1);
+            data.CallbackFn(e);
+            break;
+        }
+        }
+
     });
 
     /// Rendering ///////////////////////

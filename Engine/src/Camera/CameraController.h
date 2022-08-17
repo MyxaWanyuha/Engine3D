@@ -11,7 +11,7 @@ public:
 private:
     EditorCamera m_Camera;
 
-    float m_MovementSpeed = 2.5f;
+    float m_MovementSpeed = 1.0f;
     float m_MouseSensitivity = 0.1f;
     float m_Zoom = 45.0f;
 };
