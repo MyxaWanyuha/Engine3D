@@ -13,9 +13,15 @@
 #include "Render/Texture.h"
 #include "ImGui/ImGuiOpenGL.h"
 #include "Camera/Camera.h"
+#include "Camera/CameraController.h"
 
 const int c_Width = 800;
 const int c_Height = 600;
+
+struct WindowData
+{
+    std::function<void()> CallbackFn;
+};
 
 int main()
 {
@@ -41,15 +47,21 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glViewport(0, 0, c_Width, c_Height);
 
+    CameraController cameraController(EditorCamera(45.0f, (float)c_Width / c_Height));
+    WindowData windowData;
+    windowData.CallbackFn = [&]()
+    {
+    };
+
+    glfwSetWindowUserPointer(window, &windowData);
+
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height)
     {
-        LOG_INFO("Width: {0}, Height: {1}", width, height);
         glViewport(0, 0, width, height);
     });
 
     glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
     {
-        LOG_INFO("key {0}, scancode {1}, action {2}, mods {3}", key, scancode, action, mods);
         if(key == GLFW_KEY_ESCAPE)
         {
             glfwSetWindowShouldClose(window, true);
@@ -122,7 +134,6 @@ int main()
 
     Texture texture1("assets/textures/container.jpg");
     Texture texture2("assets/textures/awesomeface.png");
-    Camera camera(45.0f, c_Width, c_Height);
     glm::vec4 color{ 0.2f, 0.3f, 0.8f, 1.0f };
     /////////////////////////////////////
     while (!glfwWindowShouldClose(window))
@@ -138,17 +149,15 @@ int main()
         ImGui::InputFloat4("Color", &color.x);
         ImGui::End();
 
-        
+        cameraController.Update(window);
         shader.Bind();
         shader.SetInt("u_Tex0", 0);
         shader.SetInt("u_Tex1", 1);
         texture1.Bind(0);
         texture2.Bind(1);
-
-
         VAO.Bind();
 
-        shader.SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        shader.SetMat4("u_ViewProjection", cameraController.GetCamera().GetViewProjectionMatrix());
         for (unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);

@@ -2,48 +2,66 @@
 #include "Camera.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-Camera::Camera(float fieldOfView, float width, float height, const glm::vec3& position)
-    : m_ProjectionMatrix(glm::perspective(glm::radians(fieldOfView), width / height, c_Near, c_Far)),
-      m_ViewMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f))),
+EditorCamera::EditorCamera(float fieldOfView, float aspectRatio, const glm::vec3& position)
+    : m_ProjectionMatrix(glm::perspective(glm::radians(fieldOfView), aspectRatio, c_Near, c_Far)),
       m_ViewProjectionMatrix(m_ProjectionMatrix * m_ViewMatrix),
       m_Position(position),
-      m_FieldOfView(fieldOfView),
-      m_Width(width),
-      m_Height(height)
+      m_Yaw(-90.0f),
+      m_Pitch(0.0f)
 {
+    RecalculateAll();
 }
 
-void Camera::SetPosition(const glm::vec3& position)
+void EditorCamera::SetPosition(const glm::vec3& position)
 {
     m_Position = position;
+    RecalculateAll();
+}
+
+void EditorCamera::SetRotationPitch(float pitch)
+{
+    m_Pitch = pitch;
+    RecalculateAll();
+}
+
+void EditorCamera::SetRotationYaw(float yaw)
+{
+    m_Yaw = yaw;
+    RecalculateAll();
+}
+
+void EditorCamera::SetProjection(float fieldOfView, float aspectRatio)
+{
+    m_ProjectionMatrix = glm::perspective(glm::radians(fieldOfView), aspectRatio, c_Near, c_Far);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
     RecalculateViewProjectionMatrix();
 }
 
-void Camera::SetRotation(float rotation)
+void EditorCamera::RecalculateViewProjectionMatrix()
 {
-    m_Rotation = rotation;
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+}
+
+void EditorCamera::RecalculateViewMatrix()
+{
+    m_ViewMatrix = glm::lookAt(m_Position, m_Position + m_Front, m_Up);
     RecalculateViewProjectionMatrix();
 }
 
-void Camera::SetProjection(float fieldOfView, float width, float height)
+void EditorCamera::RecalculateCameraVectors()
 {
-    m_ProjectionMatrix = glm::perspective(glm::radians(fieldOfView), width / height, c_Near, c_Far);
-    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
-    m_Width = width;
-    m_Height = height;
+    glm::vec3 front;
+    front.x = cos(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+    front.y = sin(glm::radians(m_Pitch));
+    front.z = sin(glm::radians(m_Yaw)) * cos(glm::radians(m_Pitch));
+    m_Front = glm::normalize(front);
+    m_Right = glm::normalize(glm::cross(m_Front, c_WorldUp));
+    m_Up = glm::normalize(glm::cross(m_Right, m_Front));
 }
 
-void Camera::SetFOV(float fieldOfView)
+void EditorCamera::RecalculateAll()
 {
-    m_ProjectionMatrix = glm::perspective(glm::radians(fieldOfView), m_Width / m_Height, c_Near, c_Far);
-    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
-}
-
-void Camera::RecalculateViewProjectionMatrix()
-{
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_Position)
-                        * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
-
-    m_ViewMatrix = glm::inverse(transform);
-    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+    RecalculateCameraVectors();
+    RecalculateViewMatrix();
+    RecalculateViewProjectionMatrix();
 }
