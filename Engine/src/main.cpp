@@ -1,12 +1,21 @@
 #include "spch.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <imgui.h>
+
 #include "Render/VertexArray.h"
 #include "Render/Shader.h"
 #include "Render/Texture.h"
 #include "ImGui/ImGuiOpenGL.h"
+#include "Camera/Camera.h"
+
+const int c_Width = 800;
+const int c_Height = 600;
 
 int main()
 {
@@ -19,7 +28,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(c_Width, c_Height, "LearnOpenGL", nullptr, nullptr);
     ASSERT(window, "Failed to create GLFW window");
 
     glfwMakeContextCurrent(window);
@@ -29,7 +38,8 @@ int main()
 
     EditorUI::Init(window);
 
-    glViewport(0, 0, 800, 600);
+    glEnable(GL_DEPTH_TEST);
+    glViewport(0, 0, c_Width, c_Height);
 
     glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height)
     {
@@ -48,52 +58,106 @@ int main()
 
     /// Rendering ///////////////////////
     float vertices[] = {
-         0.5f,  0.5f, 0.0f,     1.0f, 0.0f, 0.0f, 1.0f,     1.0f, 1.0f,// top right
-         0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f, 1.0f,     1.0f, 0.0f,// bottom right
-        -0.5f, -0.5f, 0.0f,     0.0f, 0.0f, 1.0f, 1.0f,     0.0f, 0.0f,// bottom left
-        -0.5f,  0.5f, 0.0f,     0.8f, 0.3f, 0.2f, 1.0f,     0.0f, 1.0f,// top left 
-    };
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-    unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    };
+    // world space positions of our cubes
+    glm::vec3 cubePositions[] = {
+        glm::vec3(0.0f,  0.0f,  0.0f),
+        glm::vec3(2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f,  2.0f, -2.5f),
+        glm::vec3(1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
     Shader shader("assets/shaders/vertex.vert", "assets/shaders/fragment.frag");
 
-    VertexArray VAO(std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0])),
+    VertexArray VAO(/*std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0])),*/
                     std::make_shared<VertexBuffer>(vertices, sizeof(vertices)),
-                    { {DataType::Float, 3, "a_Pos"}, {DataType::Float, 4, "a_Color"}, {DataType::Float, 2, "a_TexCoord"}, });
+                    { {DataType::Float, 3, "a_Pos"}, {DataType::Float, 2, "a_TexCoord"}, });
 
     Texture texture1("assets/textures/container.jpg");
     Texture texture2("assets/textures/awesomeface.png");
+    Camera camera(45.0f, c_Width, c_Height);
+    glm::vec4 color{ 0.2f, 0.3f, 0.8f, 1.0f };
     /////////////////////////////////////
     while (!glfwWindowShouldClose(window))
     {
-        EditorUI::Begin();
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        ImGui::ShowDemoWindow();
+        glClearColor(color.x, color.y, color.z, color.w);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        EditorUI::Begin();
 
-        glm::vec4 color{ 0.2f, 0.3f, 0.8f, 1.0f };
+        ImGui::ShowDemoWindow();
         ImGui::Begin("Settings");
         ImGui::InputFloat4("Color", &color.x);
         ImGui::End();
 
-        glClearColor(color.x, color.y, color.z, color.w);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        float timeValue = glfwGetTime();
-        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
         
         shader.Bind();
-        //shader.SetFloat4("color", { 0.0f, greenValue, 0.0f, 1.0f });
         shader.SetInt("u_Tex0", 0);
         shader.SetInt("u_Tex1", 1);
         texture1.Bind(0);
         texture2.Bind(1);
+
+
         VAO.Bind();
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+        shader.SetMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            shader.SetMat4("u_Model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         EditorUI::End();
         glfwSwapBuffers(window);
