@@ -8,6 +8,7 @@
 
 #include <imgui.h>
 
+#include "Render/Renderer.h"
 #include "Render/VertexArray.h"
 #include "Render/Shader.h"
 #include "Render/Texture.h"
@@ -15,129 +16,43 @@
 #include "Camera/Camera.h"
 #include "Camera/CameraController.h"
 #include "Core/Event.h"
+#include "Core/Window.h"
+
 
 const int c_Width = 1280;
 const int c_Height = 720;
 
-struct WindowData
-{
-    std::function<void(Event&)> CallbackFn;
-};
-
 int main()
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    Window window("Engine Application", c_Width, c_Height);
 
-#ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-    GLFWwindow* window = glfwCreateWindow(c_Width, c_Height, "LearnOpenGL", nullptr, nullptr);
-    ASSERT(window, "Failed to create GLFW window");
-
-    glfwMakeContextCurrent(window);
-
-    auto glad = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-    ASSERT(glad, "Failed to initialize GLAD");
-
-    EditorUI::Init(window);
-
-    glEnable(GL_DEPTH_TEST);
-    glViewport(0, 0, c_Width, c_Height);
+    Renderer::Init();
+    Renderer::SetViewport(0, 0, window.GetWidth(), window.GetHeigth());
+    Renderer::Enable(EParam::DepthTest);
+    EditorUI::Init(window.GetWindowHandle());
+    
+    static bool bIsRunning = true;
 
     CameraController cameraController(EditorCamera(45.0f, (float)c_Width / c_Height));
-    WindowData windowData;
-    windowData.CallbackFn = [&](Event& e)
+    window.SetCallbackFn([&](Event& e)
     {
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<EventWindowResize>([&](EventWindowResize& e)
         {
-            LOG_INFO("W {0}, H {1}", e.Width, e.Height);
-            glViewport(0, 0, e.Width, e.Height);
+            Renderer::SetViewport(0, 0, e.Width, e.Height);
+
+            window.SetWidth(e.Width);
+            window.SetHeigth(e.Height);
+
             cameraController.GetCamera().SetAspectRatio(e.Width / e.Height);
             return false;
         });
-    };
 
-    glfwSetWindowUserPointer(window, &windowData);
-
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-        EventWindowResize e(width, height);
-        data.CallbackFn(e);
-    });
-
-    glfwSetCharCallback(window, [](GLFWwindow* window, unsigned int keycode)
+        dispatcher.Dispatch<EventWindowClose>([&](EventWindowClose& e)
         {
-            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-            EventKeyTyped e(keycode);
-            data.CallbackFn(e);
+            bIsRunning = false;
+            return false;
         });
-
-    glfwSetMouseButtonCallback(window, [](GLFWwindow* window, int button, int action, int mods)
-        {
-            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-            switch (action)
-            {
-            case GLFW_PRESS:
-            {
-                EventMouseButtonPressed e(button);
-                data.CallbackFn(e);
-                break;
-            }
-            case GLFW_RELEASE:
-            {
-                EventMouseButtonReleased e(button);
-                data.CallbackFn(e);
-                break;
-            }
-            }
-        });
-
-    glfwSetScrollCallback(window, [](GLFWwindow* window, double xOffset, double yOffset)
-        {
-            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-            EventMouseScrolled e(xOffset, yOffset);
-            data.CallbackFn(e);
-        });
-
-    glfwSetCursorPosCallback(window, [](GLFWwindow* window, double xPos, double yPos)
-        {
-            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-            EventMouseMoved e(xPos, yPos);
-            data.CallbackFn(e);
-        });
-
-    glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-        switch (action)
-        {
-        case GLFW_PRESS:
-        {
-            EventKeyPressed e(key, 0);
-            data.CallbackFn(e);
-            break;
-        }
-        case GLFW_RELEASE:
-        {
-            EventKeyReleased e(key);
-            data.CallbackFn(e);
-            break;
-        }
-        case GLFW_REPEAT:
-        {
-            EventKeyPressed e(key, 1);
-            data.CallbackFn(e);
-            break;
-        }
-        }
-
     });
 
     /// Rendering ///////////////////////
@@ -208,12 +123,13 @@ int main()
     Texture texture2("assets/textures/awesomeface.png");
     glm::vec4 color{ 0.2f, 0.3f, 0.8f, 1.0f };
     /////////////////////////////////////
-    while (!glfwWindowShouldClose(window))
+    //!glfwWindowShouldClose(window)
+    while (bIsRunning)
     {
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glClearColor(color.x, color.y, color.z, color.w);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        Renderer::ClearColor(color);
+        Renderer::Clear(ColorBufer | DepthBuffer);
         EditorUI::Begin();
 
         ImGui::ShowDemoWindow();
@@ -221,7 +137,7 @@ int main()
         ImGui::InputFloat4("Color", &color.x);
         ImGui::End();
 
-        cameraController.Update(window);
+        cameraController.Update(window.GetWindowHandle());
         shader.Bind();
         shader.SetInt("u_Tex0", 0);
         shader.SetInt("u_Tex1", 1);
@@ -241,11 +157,11 @@ int main()
         }
 
         EditorUI::End();
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        window.SwapBuffers();
+        window.PollEvents();
     }
 
     EditorUI::Destroy();
-    glfwTerminate();
+
     return 0;
 }

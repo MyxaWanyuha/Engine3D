@@ -22,6 +22,7 @@ struct Event
     bool bHandled = false;
 };
 
+/// Begin Key Events //////////////////////////////////////////
 struct EventKey : Event
 {
     EventKey(int key)
@@ -61,7 +62,9 @@ struct EventKeyTyped : EventKey
     {
     }
 };
+/// End Key Events ////////////////////////////////////////////
 
+/// Begin Window Events ///////////////////////////////////////
 struct EventWindowClose : Event
 {
     BODY(WindowClose)
@@ -77,7 +80,9 @@ struct EventWindowResize : Event
     }
     const uint32_t Width, Height;
 };
+/// End Window Events /////////////////////////////////////////
 
+/// Begin Mouse Events ////////////////////////////////////////
 struct EventMouseButtonPressed : Event
 {
     BODY(MouseButtonPressed)
@@ -117,7 +122,7 @@ struct EventMouseScrolled : Event
     }
     const float XOffset, YOffset;
 };
-
+/// End Mouse Events //////////////////////////////////////////
 #undef BODY(EventType_)
 
 class EventDispatcher
