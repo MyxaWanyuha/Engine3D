@@ -1,18 +1,14 @@
 #pragma once
-#include "Core/Event.h"
 #include <functional>
 #include <string>
 
 struct GLFWwindow;
-using CallbackFn = std::function<void(Event&)>;
+using CallbackFn = std::function<void(struct Event&)>;
 class Window
 {
 public:
     Window(const std::string& name, int width, int heigth);
     ~Window();
-
-    void Init();
-    void Shutdown();
 
     void SetCallbackFn(const CallbackFn& fn) { m_WindowData.Callback = fn; }
 
@@ -26,6 +22,11 @@ public:
 
     void SwapBuffers() const;
     void PollEvents() const;
+
+private:
+    void Init();
+    void Shutdown();
+
 private:
     struct WindowData
     {

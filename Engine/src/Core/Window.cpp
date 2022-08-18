@@ -1,13 +1,10 @@
 #include "spch.h"
 #include "Window.h"
 
-#include "Render/VertexArray.h"
-#include "Render/Shader.h"
-#include "Render/Texture.h"
-#include "ImGui/ImGuiOpenGL.h"
-#include "Camera/Camera.h"
-#include "Camera/CameraController.h"
 #include "Core/Event.h"
+
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
 Window::Window(const std::string& name, int width, int heigth)
     : m_WindowData(name, width, heigth)
