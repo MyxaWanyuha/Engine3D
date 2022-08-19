@@ -28,8 +28,7 @@ VertexArray::VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const 
 VertexArray::VertexArray(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout)
 {
     m_VertexBuffer = vertexBuffer;
-
-    glGenVertexArrays(1, &m_ID);
+    glCreateVertexArrays(1, &m_ID);
     glBindVertexArray(m_ID);
     m_VertexBuffer->Bind();
     int VertexBufferIndexOffset = 0;
