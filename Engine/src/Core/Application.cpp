@@ -78,10 +78,11 @@ Application::Application(const std::string& name, int width, int heigth)
     EditorUI::Init(m_Window->GetWindowHandle());
     m_CameraController = std::make_unique<CameraController>(EditorCamera(45.0f, (float)width / heigth));
 
-    m_LightShader = std::make_unique<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentLight.frag");
-    m_CubeShader = std::make_unique<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentMaterialTextures.frag");
-    m_Shader = std::make_unique<Shader>("assets/shaders/vertexTexture.vert", "assets/shaders/fragmentTexture.frag");
-
+    m_LightShader = std::make_shared<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentLight.frag");
+    m_CubeShader = std::make_shared<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentMaterialTextures.frag");
+    //m_Shader = std::make_shared<Shader>("assets/shaders/vertexTexture.vert", "assets/shaders/fragmentTexture.frag");
+    m_Shader = std::make_shared<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentMaterialTexturesLightCaster.frag");
+    m_MultipleLightsShader = std::make_shared<Shader>("assets/shaders/vertex2.vert", "assets/shaders/fragmentMultipleLights.frag");
     /*auto IBO = std::make_shared<IndexBuffer>(indices, sizeof(indices) / sizeof(indices[0]));*/
     auto VBO = std::make_shared<VertexBuffer>(vertices, sizeof(vertices));
     auto bufferLayout = BufferLayout{
@@ -95,6 +96,9 @@ Application::Application(const std::string& name, int width, int heigth)
     m_TextureContainerDiffuse = std::make_unique<Texture>("assets/textures/container2.png");
     m_TextureContainerSpecular = std::make_unique<Texture>("assets/textures/container2_specular.png");
     m_TextureContainerEmission = std::make_unique<Texture>("assets/textures/matrix.jpg");
+
+    for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+        m_PointLights->Position = m_PointLightPositions[i];
 }
 
 Application::~Application()
@@ -168,43 +172,104 @@ void Application::Run()
         auto deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        m_Light.Position.x = cos(currentFrame);
-        m_Light.Position.y = sin(currentFrame);
-
-        ImGui::ShowDemoWindow();
         ImGui::Begin("Settings");
         ImGui::DragFloat4("Background color", &m_BackgroundColor.x, 0.01f, 0.0f, 1.0f);
-        ImGui::Text("Light");
-        ImGui::DragFloat3("Light position", &m_Light.Position.x, 0.01f, 0.0f, 100.0f);
-        ImGui::DragFloat3("Light Ambient", &m_Light.Ambient.x, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat3("Light Diffuse", &m_Light.Diffuse.x, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat3("Light Specular", &m_Light.Specular.x, 0.01f, 0.0f, 1.0f);
         ImGui::Text("Object");
-        ImGui::DragFloat3("Object position", &m_ObjectPosition.x, 0.01f, 0.0f, 100.0f);
+        ImGui::DragFloat3("Object Position", &m_ObjectPosition.x, 0.01f, 0.0f, 100.0f);
         ImGui::DragFloat3("Object Ambient", &m_ObjectMaterial.Ambient.x, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat3("Object Diffuse", &m_ObjectMaterial.Diffuse.x, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat3("Object Specular", &m_ObjectMaterial.Specular.x, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Object Shininess", &m_ObjectMaterial.Shininess, 2.0f, 2.0f, 256.0f);
         ImGui::End();
+
+        ImGui::Begin("SpotLight settings");
+        ImGui::DragFloat3("Position", &m_SpotLight.Position.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat3("Direction", &m_SpotLight.Direction.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat("CutOff", &m_SpotLight.CutOff, 0.01f, 0.0f, 89.0f);
+        ImGui::DragFloat("OuterCutOff", &m_SpotLight.OuterCutOff, 0.01f, 0.0f, 89.0f);
+        ImGui::DragFloat("Linear", &m_SpotLight.Linear, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("Quadratic", &m_SpotLight.Quadratic, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat3("Ambient", &m_SpotLight.Ambient.x, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat3("Diffuse", &m_SpotLight.Diffuse.x, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat3("Specular", &m_SpotLight.Specular.x, 0.01f, 0.0f, 1.0f);
+        ImGui::End();
+
+        for (int i = 0; i < NR_POINT_LIGHTS; ++i)
         {
+            ImGui::Begin(std::string("PointLight settings " + std::to_string(i)).c_str());
+            ImGui::DragFloat3("Position", &m_PointLights[i].Position.x, 0.01f, -100.0f, 100.0f);
+            ImGui::DragFloat3("Ambient", &m_PointLights[i].Ambient.x, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat3("Diffuse", &m_PointLights[i].Diffuse.x, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat3("Specular", &m_PointLights[i].Specular.x, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Linear", &m_PointLights[i].Linear, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Quadratic", &m_PointLights[i].Quadratic, 0.01f, 0.0f, 1.0f);
+            ImGui::End();
+        }
+        ImGui::Begin("DirLight settings");
+        ImGui::DragFloat3("Direction", &m_DirLight.Direction.x, 0.01f, -100.0f, 100.0f);
+        ImGui::DragFloat3("Ambient", &m_DirLight.Ambient.x, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat3("Diffuse", &m_DirLight.Diffuse.x, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat3("Specular", &m_DirLight.Specular.x, 0.01f, 0.0f, 1.0f);
+        ImGui::End();
+
+        {
+            auto shader = m_MultipleLightsShader;
             m_CameraController->Update(m_Window->GetWindowHandle());
-            m_Shader->Bind();
-            m_Shader->SetInt("u_Tex0", 0);
-            m_Shader->SetInt("u_Tex1", 1);
+            shader->Bind();
+            shader->SetFloat3("u_SpotLight.Position", m_CameraController->GetCamera().GetPosition());
+            shader->SetFloat3("u_SpotLight.Direction", m_CameraController->GetCamera().GetFront());
+            shader->SetFloat("u_SpotLight.CutOff", m_SpotLight.CutOff);
+            shader->SetFloat("u_SpotLight.OuterCutOff", m_SpotLight.OuterCutOff);
+            shader->SetFloat("u_SpotLight.Linear", m_SpotLight.Linear);
+            shader->SetFloat("u_SpotLight.Quadratic", m_SpotLight.Quadratic);
+            shader->SetFloat3("u_SpotLight.Ambient", m_SpotLight.Ambient);
+            shader->SetFloat3("u_SpotLight.Diffuse", m_SpotLight.Diffuse);
+            shader->SetFloat3("u_SpotLight.Specular", m_SpotLight.Specular);
 
-            m_TextureContainer->Bind(0);
-            m_TextureAwesomeface->Bind(1);
+            for (int i = 0; i < NR_POINT_LIGHTS; ++i)
+            {
+                char buffer[64];
+                sprintf(buffer, "u_PointLights[%i].Position", i);
+                shader->SetFloat3(buffer, m_PointLights[i].Position);
+                sprintf(buffer, "u_PointLights[%i].Ambient", i);
+                shader->SetFloat3(buffer, m_PointLights[i].Ambient);
+                sprintf(buffer, "u_PointLights[%i].Diffuse", i);
+                shader->SetFloat3(buffer, m_PointLights[i].Diffuse);
+                sprintf(buffer, "u_PointLights[%i].Specular", i);
+                shader->SetFloat3(buffer, m_PointLights[i].Specular);
+                sprintf(buffer, "u_PointLights[%i].Linear", i);
+                shader->SetFloat(buffer, m_PointLights[i].Linear);
+                sprintf(buffer, "u_PointLights[%i].Quadratic", i);
+                shader->SetFloat(buffer, m_PointLights[i].Quadratic);
+            }
 
-            m_Shader->SetMat4("u_ViewProjection", m_CameraController->GetCamera().GetViewProjectionMatrix());
+            shader->SetFloat3("u_DirLight.Direction", m_DirLight.Direction);
+            shader->SetFloat3("u_DirLight.Ambient", m_DirLight.Ambient);
+            shader->SetFloat3("u_DirLight.Diffuse", m_DirLight.Diffuse);
+            shader->SetFloat3("u_DirLight.Specular", m_DirLight.Specular);
+
+            shader->SetFloat3("u_CameraPosition", m_CameraController->GetCamera().GetPosition());
+
+            /// Material uniforms begin ///////////////////////
+            m_TextureContainerDiffuse->Bind(0);
+            m_TextureContainerSpecular->Bind(1);
+            m_TextureContainerEmission->Bind(2);
+            shader->SetInt("u_Material.Diffuse", 0);
+            shader->SetInt("u_Material.Specular", 1);
+            //m_Shader->SetInt("u_Material.Emission", 2);
+            shader->SetFloat("u_Material.Shininess", m_ObjectMaterial.Shininess);
+            /// Material uniforms end /////////////////////////
+
+            shader->SetMat4("u_ViewProjection", m_CameraController->GetCamera().GetViewProjectionMatrix());
 
             m_VertexArray->Bind();
             for (unsigned int i = 0; i < 10; i++)
             {
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, cubePositions[i] + glm::vec3(15));
+                model = glm::translate(model, cubePositions[i]);
                 float angle = 20.0f * i;
                 model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-                m_Shader->SetMat4("u_Model", model);
+                shader->SetMat4("u_Model", model);
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
@@ -212,10 +277,10 @@ void Application::Run()
         // Cube
         {
             m_CubeShader->Bind();
-            m_CubeShader->SetFloat3("u_Light.Position", m_Light.Position);
-            m_CubeShader->SetFloat3("u_Light.Ambient", m_Light.Ambient);
-            m_CubeShader->SetFloat3("u_Light.Diffuse", m_Light.Diffuse);
-            m_CubeShader->SetFloat3("u_Light.Specular", m_Light.Specular);
+            m_CubeShader->SetFloat3("u_Light.Position", m_SpotLight.Position);
+            m_CubeShader->SetFloat3("u_Light.Ambient", m_SpotLight.Ambient);
+            m_CubeShader->SetFloat3("u_Light.Diffuse", m_SpotLight.Diffuse);
+            m_CubeShader->SetFloat3("u_Light.Specular", m_SpotLight.Specular);
 
             m_CubeShader->SetFloat3("u_CameraPosition", m_CameraController->GetCamera().GetPosition());
 
@@ -239,11 +304,11 @@ void Application::Run()
         // Light
         {
             m_LightShader->Bind();
-            m_LightShader->SetFloat3("u_LightColor", m_Light.Ambient);
+            m_LightShader->SetFloat3("u_LightColor", m_SpotLight.Ambient);
             m_LightShader->SetMat4("u_ViewProjection", m_CameraController->GetCamera().GetViewProjectionMatrix());
 
             glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, m_Light.Position);
+            model = glm::translate(model, m_SpotLight.Position);
             model = glm::scale(model, glm::vec3(0.2f));
             m_LightShader->SetMat4("u_Model", model);
 

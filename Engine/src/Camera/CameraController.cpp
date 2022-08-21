@@ -22,9 +22,6 @@ void CameraController::Update(GLFWwindow* window)
         m_Camera.SetPosition(m_Camera.GetPosition() + m_Camera.GetRight() * m_MovementSpeed);
     else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         m_Camera.SetPosition(m_Camera.GetPosition() - m_Camera.GetRight() * m_MovementSpeed);
-
-    // Mouse input
-
 }
 
 void CameraController::OnMouseButtonPressed(int button)
