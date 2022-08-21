@@ -1,11 +1,13 @@
 #include "spch.h"
 #include "Application.h"
 
+#include "Core/Input.h"
 #include "Render/Renderer.h"
 #include <ImGui/ImGuiOpenGL.h>
 #include <imgui.h>
 #include <glm/gtx/transform.hpp>
 
+Application* Application::s_Instance;
 
 float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f, 0.0f, -1.0f,
@@ -66,6 +68,8 @@ glm::vec3 cubePositions[] = {
 
 Application::Application(const std::string& name, int width, int heigth)
 {
+    ASSERT(s_Instance == nullptr, "Application alredy created!");
+    s_Instance = this;
     m_Window = std::make_unique<Window>(name, width, heigth);
     m_Window->SetCallbackFn(BIND_EVENT_FN(Application::OnEvent));
 
@@ -115,11 +119,11 @@ void Application::OnEvent(Event& e)
     // TODO to layout
     dispatcher.Dispatch<EventKeyPressed>([&](EventKeyPressed& e)
         {
-            if (e.Key == GLFW_KEY_ESCAPE)
+            if (e.Key == Key::Escape)
                 m_bIsRunning = false;
 
             static bool bIsCursorVisible = true;
-            if (e.Key == GLFW_KEY_LEFT_ALT)
+            if (e.Key == Key::LeftAlt)
             {
                 if (bIsCursorVisible)
                 {
@@ -131,6 +135,7 @@ void Application::OnEvent(Event& e)
                 }
                 bIsCursorVisible = !bIsCursorVisible;
             }
+
             return false;
         });
     dispatcher.Dispatch<EventMouseButtonPressed>([&](EventMouseButtonPressed& e)
@@ -161,6 +166,7 @@ void Application::Run()
 {
     while (m_bIsRunning)
     {
+        Update(Application::GetDeltaTime());
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         Renderer::ClearColor(m_BackgroundColor);
@@ -214,7 +220,6 @@ void Application::Run()
 
         {
             auto shader = m_MultipleLightsShader;
-            m_CameraController->Update(m_Window->GetWindowHandle());
             shader->Bind();
             shader->SetFloat3("u_SpotLight.Position", m_CameraController->GetCamera().GetPosition());
             shader->SetFloat3("u_SpotLight.Direction", m_CameraController->GetCamera().GetFront());
@@ -320,6 +325,19 @@ void Application::Run()
         m_Window->PollEvents();
     }
 }
+
+void Application::Update(float dt)
+{
+    if(Input::IsKeyPressed(Key::W))
+        m_CameraController->MoveForward(dt);
+    if (Input::IsKeyPressed(Key::S))
+        m_CameraController->MoveForward(-1.0f * dt);
+    if (Input::IsKeyPressed(Key::D))
+        m_CameraController->MoveRight(dt);
+    if (Input::IsKeyPressed(Key::A))
+        m_CameraController->MoveRight(-1.0f * dt);
+}
+
 
 bool Application::OnWindowResize(EventWindowResize& e)
 {

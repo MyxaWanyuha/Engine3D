@@ -62,9 +62,20 @@ public:
     Application(const std::string& name, int width, int heigth);
     ~Application();
 
+    static Application& Get() { return *s_Instance; }
+
+    auto GetNativeWindow() const { return m_Window->GetWindowHandle(); }
+
     void OnEvent(Event& e);
 
     void Run();
+    void Update(float dt);
+    static float GetDeltaTime()
+    {
+        static float lastFrame = 0.0f;
+        float currentFrame = glfwGetTime();
+        return currentFrame - lastFrame;
+    }
 
 private:
     bool OnWindowResize(EventWindowResize& e);
@@ -73,6 +84,7 @@ private:
 private:
     std::unique_ptr<Window> m_Window;
     bool m_bIsRunning = true;
+    static Application* s_Instance;
 
     // TODO to layout
     std::shared_ptr<Shader> m_Shader;

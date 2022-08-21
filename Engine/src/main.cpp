@@ -1,7 +1,7 @@
 #include "spch.h"
 #include "Core/Application.h"
 
-std::unique_ptr<Application> CreateApp(const std::string& name, int width, int heigth);
+static std::unique_ptr<Application> CreateApp(const std::string& name, int width, int heigth);
 
 int main()
 {
