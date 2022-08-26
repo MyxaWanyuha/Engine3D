@@ -1,27 +1,75 @@
 #include "spch.h"
 #include "CameraController.h"
+#include "Core/Input.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
 
 CameraController::CameraController(const EditorCamera& camera)
     : m_Camera(camera)
 {
 }
 
-void CameraController::MoveForward(int multiplier)
+void CameraController::Update(float dt)
+{
+    if (Input::IsKeyPressed(Key::W))
+        MoveForward(dt);
+    if (Input::IsKeyPressed(Key::S))
+        MoveForward(-1.0f * dt);
+    if (Input::IsKeyPressed(Key::D))
+        MoveRight(dt);
+    if (Input::IsKeyPressed(Key::A))
+        MoveRight(-1.0f * dt);
+}
+
+void CameraController::OnEvent(Event& e)
+{
+    EventDispatcher dispatcher(e);
+
+    dispatcher.Dispatch<EventMouseButtonPressed>([&](EventMouseButtonPressed& e)
+        {
+            OnMouseButtonPressed(e.Button);
+            return false;
+        });
+
+    dispatcher.Dispatch<EventMouseButtonReleased>([&](EventMouseButtonReleased& e)
+        {
+            OnMouseButtonReleased(e.Button);
+            return false;
+        });
+
+    dispatcher.Dispatch<EventMouseMoved>([&](EventMouseMoved& e)
+        {
+            OnMouseInput(e.X, e.Y);
+            return false;
+        });
+    dispatcher.Dispatch<EventMouseScrolled>([&](EventMouseScrolled& e)
+        {
+            OnMouseScroll(e.YOffset);
+            return false;
+        });
+
+    dispatcher.Dispatch<EventWindowResize>([&](EventWindowResize& e)
+        {
+            GetCamera().SetAspectRatio(e.Width / e.Height);
+            return false;
+        });
+}
+
+void CameraController::MoveForward(float multiplier)
 {
     m_Camera.SetPosition(m_Camera.GetPosition() + multiplier * m_MovementSpeed * m_Camera.GetFront());
 }
 
-void CameraController::MoveRight(int multiplier)
+void CameraController::MoveRight(float multiplier)
 {
     m_Camera.SetPosition(m_Camera.GetPosition() + multiplier * m_MovementSpeed * m_Camera.GetRight());
 }
 
 void CameraController::OnMouseButtonPressed(int button)
 {
-    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    if (button == MouseKey::Right)
     {
         m_bMouseControl = true;
         m_bFirstMouse = true;
@@ -30,7 +78,7 @@ void CameraController::OnMouseButtonPressed(int button)
 
 void CameraController::OnMouseButtonReleased(int button)
 {
-    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+    if (button == MouseKey::Right)
     {
         m_bMouseControl = false;
     }

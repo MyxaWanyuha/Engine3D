@@ -129,7 +129,10 @@ namespace Key
         RightSuper      = GLFW_KEY_RIGHT_SUPER,
         Menu            = GLFW_KEY_MENU,
     };
+}
 
+namespace MouseKey
+{
     enum : MouseCode
     {
         B1 = GLFW_MOUSE_BUTTON_1,
@@ -140,9 +143,9 @@ namespace Key
         B6 = GLFW_MOUSE_BUTTON_6,
         B7 = GLFW_MOUSE_BUTTON_7,
         B8 = GLFW_MOUSE_BUTTON_8,
-        ButtonLast = GLFW_MOUSE_BUTTON_LAST,
-        ButtonLeft = GLFW_MOUSE_BUTTON_LEFT,
-        ButtonRight = GLFW_MOUSE_BUTTON_RIGHT,
-        ButtonMiddle = GLFW_MOUSE_BUTTON_MIDDLE,
+        Last = GLFW_MOUSE_BUTTON_LAST,
+        Left = GLFW_MOUSE_BUTTON_LEFT,
+        Right = GLFW_MOUSE_BUTTON_RIGHT,
+        Middle = GLFW_MOUSE_BUTTON_MIDDLE,
     };
 }

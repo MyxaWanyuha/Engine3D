@@ -4,6 +4,7 @@
 
 #include "Core/Window.h"
 #include "Core/Event.h"
+#include "Core/LayerArray.h"
 
 #include "Camera/CameraController.h"
 
@@ -60,22 +61,19 @@ class Application
 {
 public:
     Application(const std::string& name, int width, int heigth);
-    ~Application();
+    virtual ~Application();
 
     static Application& Get() { return *s_Instance; }
 
+    auto& GetWindow() { return *m_Window; }
     auto GetNativeWindow() const { return m_Window->GetWindowHandle(); }
 
-    void OnEvent(Event& e);
+    virtual void OnEvent(Event& e);
 
     void Run();
-    void Update(float dt);
-    static float GetDeltaTime()
-    {
-        static float lastFrame = 0.0f;
-        float currentFrame = glfwGetTime();
-        return currentFrame - lastFrame;
-    }
+    virtual void Update(float dt);
+
+    LayerArray& GetLayerArray() { return m_LayerArray; }
 
 private:
     bool OnWindowResize(EventWindowResize& e);
@@ -85,34 +83,8 @@ private:
     std::unique_ptr<Window> m_Window;
     bool m_bIsRunning = true;
     static Application* s_Instance;
-
-    // TODO to layout
-    std::shared_ptr<Shader> m_Shader;
-    std::shared_ptr<Shader> m_CubeShader;
-    std::shared_ptr<Shader> m_LightShader;
-    std::shared_ptr<Shader> m_MultipleLightsShader;
-    std::unique_ptr<VertexArray> m_VertexArray;
-    std::unique_ptr<Texture> m_TextureContainer;
-    std::unique_ptr<Texture> m_TextureAwesomeface;
-    std::unique_ptr<Texture> m_TextureContainerDiffuse;
-    std::unique_ptr<Texture> m_TextureContainerSpecular;
-    std::unique_ptr<Texture> m_TextureContainerEmission;
-    
-    glm::vec4 m_BackgroundColor = glm::vec4{ 0.2f, 0.3f, 0.8f, 1.0f };
-
-    SpotLight m_SpotLight;
-    PointLight m_PointLights[NR_POINT_LIGHTS];
-    glm::vec3 m_PointLightPositions[NR_POINT_LIGHTS] = {
-        glm::vec3(0.7f,  0.2f,  2.0f),
-        glm::vec3(2.3f, -3.3f, -4.0f),
-        glm::vec3(-4.0f,  2.0f, -12.0f),
-        glm::vec3(0.0f,  0.0f, -3.0f)
-    };
-    DirLight m_DirLight;
-
-    glm::vec3 m_ObjectPosition = glm::vec3(0, 0, 0);
-    Material m_ObjectMaterial = { { 0.0f, 0.0f, 0.37f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, 256.0f };
-
-    std::unique_ptr<CameraController> m_CameraController;
+    LayerArray m_LayerArray;
+    float m_LastFrame = 0.0f;
 };
 
+std::unique_ptr<Application> CreateApp(const std::string& name, int width, int heigth);
