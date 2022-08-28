@@ -1,6 +1,6 @@
 workspace "Engine"
 	architecture "x86_64"
-
+	startproject "Engine"
 	configurations
     {
          "Debug",
