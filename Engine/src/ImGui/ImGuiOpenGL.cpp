@@ -6,7 +6,7 @@
 #include <backends/imgui_impl_opengl3.h>
 #include <GLFW/glfw3.h>
 
-void EditorUI::Init(GLFWwindow* window)
+void ImGuiUI::Init(void* window)
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -16,24 +16,24 @@ void EditorUI::Init(GLFWwindow* window)
     io.ConfigFlags |= ImGuiConfigFlags_::ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplOpenGL3_Init();
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplGlfw_InitForOpenGL((GLFWwindow*)window, true);
 }
 
-void EditorUI::Destroy()
+void ImGuiUI::Destroy()
 {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
-void EditorUI::Begin()
+void ImGuiUI::Begin()
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void EditorUI::End()
+void ImGuiUI::End()
 {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

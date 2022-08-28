@@ -20,11 +20,13 @@ IncludeDir["Glad"] = "Engine/vendor/Glad/include"
 IncludeDir["ImGui"] = "Engine/vendor/imgui"
 IncludeDir["glm"] = "Engine/vendor/glm"
 IncludeDir["stb_image"] = "Engine/vendor/stb_image"
+IncludeDir["assimp"] = "Engine/vendor/assimp/include"
 
 group "Dependencies"
 	include "Engine/vendor/GLFW"
 	include "Engine/vendor/Glad"
 	include "Engine/vendor/imgui"
+	include "Engine/vendor/assimp"
 group ""
 
 project "Engine"
@@ -61,6 +63,7 @@ project "Engine"
 		"GLFW",
 		"Glad",
 		"ImGui",
+		"assimp",
 		"opengl32.lib"
 	}
 
@@ -72,7 +75,8 @@ project "Engine"
 		"%{IncludeDir.Glad}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.glm}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.assimp}"
 	}
     
 	filter "system:windows"

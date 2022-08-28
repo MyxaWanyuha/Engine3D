@@ -1,11 +1,9 @@
 #pragma once
 
-struct GLFWwindow;
-
-class EditorUI
+class ImGuiUI
 {
 public:
-    static void Init(GLFWwindow* window);
+    static void Init(void* window);
     static void Destroy();
     static void Begin();
     static void End();

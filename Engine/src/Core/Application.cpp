@@ -20,12 +20,12 @@ Application::Application(const std::string& name, int width, int heigth)
     Renderer::SetViewport(0, 0, m_Window->GetWidth(), m_Window->GetHeigth());
     Renderer::Enable(EParam::DepthTest);
     
-    EditorUI::Init(m_Window->GetWindowHandle());
+    ImGuiUI::Init(m_Window->GetWindowHandle());
 }
 
 Application::~Application()
 {
-    EditorUI::Destroy();
+    ImGuiUI::Destroy();
 }
 
 void Application::OnEvent(Event& e)
@@ -73,13 +73,13 @@ void Application::Run()
         auto deltaTime = currentFrame - m_LastFrame;
         m_LastFrame = currentFrame;
         Update(deltaTime);
-        EditorUI::Begin();
+        ImGuiUI::Begin();
         for (auto it = m_LayerArray.rbegin(); it != m_LayerArray.rend(); ++it)
         {
             (*it)->Update(deltaTime);
             (*it)->OnImGuiRender();
         }
-        EditorUI::End();
+        ImGuiUI::End();
 
         m_Window->SwapBuffers();
         m_Window->PollEvents();
