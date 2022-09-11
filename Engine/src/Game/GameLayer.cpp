@@ -158,7 +158,7 @@ void GameLayer::Update(float dt)
             float angle = 20.0f * i;
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
             shader->SetMat4("u_Model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            Renderer::DrawArrays(0, 36);
         }
     }
 
@@ -187,7 +187,7 @@ void GameLayer::Update(float dt)
         m_CubeShader->SetMat4("u_Model", model);
 
         m_VertexArray->Bind();
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        Renderer::DrawArrays(0, 36);
     }
     // Light
     {
@@ -201,7 +201,7 @@ void GameLayer::Update(float dt)
         m_LightShader->SetMat4("u_Model", model);
 
         m_VertexArray->Bind();
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        Renderer::DrawArrays(0, 36);
     }
 }
 

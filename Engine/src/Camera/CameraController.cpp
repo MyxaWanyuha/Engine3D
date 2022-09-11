@@ -52,6 +52,7 @@ void CameraController::OnEvent(Event& e)
 
     dispatcher.Dispatch<EventWindowResize>([&](EventWindowResize& e)
         {
+            if (e.Height == 0) return false;
             GetCamera().SetAspectRatio(e.Width / e.Height);
             return false;
         });

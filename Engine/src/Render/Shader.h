@@ -6,8 +6,11 @@
 class Shader
 {
 public:
+    Shader() : m_ID(0) {}
     Shader(const char* vertexPath, const char* fragmentPath);
     ~Shader();
+
+    void Init(const char* vertexPath, const char* fragmentPath);
 
     void Bind() const;
     void Unbind() const;

@@ -65,12 +65,16 @@ private:
 class VertexArray
 {
 public:
+    // Default constructor only for Mesh class
+    VertexArray();
+    void Init(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
+
     VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
     VertexArray(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout);
     ~VertexArray();
 
     void Bind() const;
-    void Unind() const;
+    void Unbind() const;
 private:
     GLuint m_ID;
     std::shared_ptr<IndexBuffer> m_IndexBuffer;

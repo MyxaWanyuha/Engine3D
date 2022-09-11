@@ -6,6 +6,7 @@
 class CameraController
 {
 public:
+    // TODO default constructor
     CameraController(const EditorCamera& camera);
     EditorCamera& GetCamera() { return m_Camera; }
 

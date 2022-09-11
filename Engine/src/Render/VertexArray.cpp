@@ -1,15 +1,21 @@
 #include "spch.h"
 #include "VertexArray.h"
 
-VertexArray::VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout)
+VertexArray::VertexArray()
+    : m_ID(0)
 {
+}
+
+void VertexArray::Init(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout)
+{
+    ASSERT(m_ID == 0, "Vertex array already initialized!");
+
     m_IndexBuffer = indexBuffer;
     m_VertexBuffer = vertexBuffer;
 
-    glGenVertexArrays(1, &m_ID);
+    glCreateVertexArrays(1, &m_ID);
     glBindVertexArray(m_ID);
     m_VertexBuffer->Bind();
-    m_IndexBuffer->Bind();
     int VertexBufferIndexOffset = 0;
     for (const auto& e : layout)
     {
@@ -23,6 +29,14 @@ VertexArray::VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const 
             (const void*)e.Offset);
         ++VertexBufferIndexOffset;
     }
+    m_IndexBuffer->Bind();
+    glBindVertexArray(0);
+}
+
+VertexArray::VertexArray(const std::shared_ptr<IndexBuffer>& indexBuffer, const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout)
+    : m_ID(0)
+{
+    Init(indexBuffer, vertexBuffer, layout);
 }
 
 VertexArray::VertexArray(const std::shared_ptr<VertexBuffer>& vertexBuffer, const BufferLayout& layout)
@@ -44,6 +58,7 @@ VertexArray::VertexArray(const std::shared_ptr<VertexBuffer>& vertexBuffer, cons
             (const void*)e.Offset);
         ++VertexBufferIndexOffset;
     }
+    glBindVertexArray(0);
 }
 
 VertexArray::~VertexArray()
@@ -56,7 +71,7 @@ void VertexArray::Bind() const
     glBindVertexArray(m_ID);
 }
 
-void VertexArray::Unind() const
+void VertexArray::Unbind() const
 {
     glBindVertexArray(0);
 }

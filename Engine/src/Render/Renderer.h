@@ -34,10 +34,7 @@ public:
     static void Clear(EBitField field);
     static void Clear(int field);
 
-    // TODO
-    //static void DrawArrays();
-private:
-
-
+    static void DrawArrays(uint32_t first, size_t count);
+    static void DrawElements(size_t size);
 };
 

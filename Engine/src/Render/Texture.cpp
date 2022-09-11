@@ -2,7 +2,8 @@
 #include "Texture.h"
 #include <stb_image.h>
 
-Texture::Texture(const std::string& path)
+Texture::Texture(const std::string& path, const std::string& name)
+    : m_Name(&name)
 {
     int width, height, channels;
     stbi_set_flip_vertically_on_load(1);
@@ -44,6 +45,23 @@ Texture::Texture(const std::string& path)
 Texture::~Texture()
 {
     glDeleteTextures(1, &m_ID);
+}
+
+Texture::Texture(Texture&& texture) noexcept
+    : m_ID(texture.m_ID), m_Width(texture.m_Width), m_Height(texture.m_Height), m_Name(texture.m_Name)
+{
+    texture.m_ID = 0;
+    texture.m_Width = 0;
+    texture.m_Height = 0;
+}
+
+Texture& Texture::operator=(Texture&& texture) noexcept
+{
+    m_ID = texture.m_ID;
+    m_Width = texture.m_Width;
+    m_Height = texture.m_Height;
+    m_Name = texture.m_Name;
+    return *this;
 }
 
 void Texture::Bind(uint32_t slot) const

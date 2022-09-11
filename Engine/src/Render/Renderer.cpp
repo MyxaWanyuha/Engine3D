@@ -37,3 +37,13 @@ void Renderer::Clear(int field)
 {
     glClear(field);
 }
+
+void Renderer::DrawArrays(uint32_t first, size_t count)
+{
+    glDrawArrays(GL_TRIANGLES, first, count);
+}
+
+void Renderer::DrawElements(size_t size)
+{
+    GL_CHECK(glDrawElements(GL_TRIANGLES, size, GL_UNSIGNED_INT, 0));
+}

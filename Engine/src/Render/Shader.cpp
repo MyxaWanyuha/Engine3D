@@ -33,7 +33,20 @@ std::string ReadFromFile(const char* path)
 }
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
+    : m_ID(0)
 {
+    Init(vertexPath, fragmentPath);
+}
+
+Shader::~Shader()
+{
+    ASSERT(m_ID != 0, "Shader not initialized!");
+    glDeleteProgram(m_ID);
+}
+
+void Shader::Init(const char* vertexPath, const char* fragmentPath)
+{
+    ASSERT(m_ID == 0, "Shader already initialized!");
     auto vertexSrc = ReadFromFile(vertexPath);
     auto fragmentSrc = ReadFromFile(fragmentPath);
     const char* vertexSrcPtr = vertexSrc.c_str();
@@ -115,13 +128,9 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     glDeleteShader(fragmentShader);
 }
 
-Shader::~Shader()
-{
-    glDeleteProgram(m_ID);
-}
-
 void Shader::Bind() const
 {
+    ASSERT(m_ID != 0, "Shader not initialized!");
     glUseProgram(m_ID);
 }
 
@@ -162,6 +171,7 @@ void Shader::SetMat4(const std::string& name, const glm::mat4& value)
 
 int Shader::GetUniformLocation(const std::string& name) const
 {
+    ASSERT(m_ID != 0, "Shader not initialized!");
     auto it = m_UniformLocationCache.find(name);
     if (it != m_UniformLocationCache.end())
         return it->second;
